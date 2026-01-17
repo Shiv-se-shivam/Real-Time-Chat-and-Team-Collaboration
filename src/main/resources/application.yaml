@@ -22,8 +22,3 @@ spring:
       chat:
         options:
           model: llama3
-#
-#  ai:
-#    openai:
-#      api-key: "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"
-

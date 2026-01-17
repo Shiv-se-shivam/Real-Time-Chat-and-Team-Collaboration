@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Chat 2026</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        #messages { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; }
+        .ai-msg { color: blue; font-weight: bold; }
+    </style>
+</head>
+<body onload="connect()">
+<h2>Chat Room: <span id="roomDisplay">general</span></h2>
+<div id="messages"></div>
+<input type="text" id="user" placeholder="Your Name">
+<input type="text" id="msg" placeholder="Type @ai to ask assistant...">
+<button onclick="send()">Send</button>
+
+<script>
+    var stompClient = null;
+    var roomId = "general";
+
+    function connect() {
+        var socket = new SockJS('/chat-socket');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            // The Fix: Path must match the controller's convertAndSend
+            stompClient.subscribe('/topic/room/' + roomId, function (response) {
+                showMessage(JSON.parse(response.body));
+            });
+        }, function(error) {
+            console.error('STOMP error: ' + error);
+        });
+    }
+
+    function send() {
+        var sender = document.getElementById('user').value || "Anonymous";
+        var content = document.getElementById('msg').value;
+        if (content && stompClient) {
+            stompClient.send("/app/chat/" + roomId, {},
+                JSON.stringify({'sender': sender, 'content': content}));
+            document.getElementById('msg').value = '';
+        }
+    }
+
+    function showMessage(msg) {
+        var div = document.getElementById('messages');
+        var p = document.createElement('p');
+        if(msg.sender === "AI Assistant") p.className = "ai-msg";
+        p.innerHTML = `<strong>${msg.sender}:</strong> ${msg.content}`;
+        div.appendChild(p);
+        div.scrollTop = div.scrollHeight;
+    }
+</script>
+</body>
+</html>
